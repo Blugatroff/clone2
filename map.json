@@ -1,0 +1,56 @@
+[
+  {
+    "name": "dirt",
+    "rect": {
+      "top_left_x": 0.0,
+      "top_left_y": 0.0,
+      "down_right_x": 1.0,
+      "down_right_y": 0.16666667
+    }
+  },
+  {
+    "name": "grass_side",
+    "rect": {
+      "top_left_x": 0.0,
+      "top_left_y": 0.16666667,
+      "down_right_x": 1.0,
+      "down_right_y": 0.33333334
+    }
+  },
+  {
+    "name": "grass_top",
+    "rect": {
+      "top_left_x": 0.0,
+      "top_left_y": 0.33333334,
+      "down_right_x": 1.0,
+      "down_right_y": 0.5
+    }
+  },
+  {
+    "name": "sand",
+    "rect": {
+      "top_left_x": 0.0,
+      "top_left_y": 0.5,
+      "down_right_x": 1.0,
+      "down_right_y": 0.6666667
+    }
+  },
+  {
+    "name": "stone",
+    "rect": {
+      "top_left_x": 0.0,
+      "top_left_y": 0.6666667,
+      "down_right_x": 1.0,
+      "down_right_y": 0.8333333
+    }
+  },
+  {
+    "name": "water",
+    "rect": {
+      "top_left_x": 0.0,
+      "top_left_y": 0.8333333,
+      "down_right_x": 1.0,
+      "down_right_y": 1.0
+    }
+  }
+]
