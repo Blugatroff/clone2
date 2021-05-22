@@ -1,4 +1,3 @@
-use crate::flat_middleware::FlatMeshHandle;
 use crate::manager::{EcsModelHandle, EcsUvMesh};
 use cgmath::{Matrix3, Vector3};
 use finger_paint_wgpu::{LightAttenuation, ViewMatrixMode};
@@ -25,16 +24,16 @@ pub struct Model(pub EcsModelHandle);
 pub struct UvMesh(pub EcsUvMesh);
 
 #[derive(Component)]
-pub struct FlatMesh(pub FlatMeshHandle);
+pub struct FlatMesh(pub crate::flat_middleware::FlatMesh);
 
 #[derive(Component, Debug)]
 pub struct Camera {
     pub fov: f32,
 }
 
-pub struct ChunkMesh(pub crate::chunk_middle_ware::ChunkMeshHandle);
+pub struct ChunkMesh(pub crate::chunk_middle_ware::ChunkMesh);
 impl Component for ChunkMesh {
-    type Storage = FlaggedStorage<Self, DenseVecStorage<Self>>;
+    type Storage = DenseVecStorage<Self>;
 }
 
 #[derive(Component, Debug)]

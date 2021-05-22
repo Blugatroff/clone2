@@ -1,25 +1,26 @@
 use crate::blocks::Side;
 use crate::blocks::{Atlas, Block};
 use crate::chunk::{Chunk, ChunkMap, CHUNK_SIZE};
-use crate::chunk_middle_ware::{ChunkMeshMiddleWare, ChunkVertex};
+use crate::chunk_middle_ware::ChunkVertex;
 use crate::components::ChunkMesh;
 use crate::dir::Dir;
 use cgmath::Vector3;
-use specs::{Entities, Join, Read, ReadStorage, System, WriteStorage};
+use specs::{Entities, Join, Read, ReadExpect, System, WriteStorage};
 
-pub struct ChunkMeshGeneration<'a>(pub &'a mut ChunkMeshMiddleWare, pub &'a mut Atlas);
-impl<'a> System<'a> for ChunkMeshGeneration<'_> {
+pub struct ChunkMeshGeneration;
+impl<'a> System<'a> for ChunkMeshGeneration {
     #[allow(clippy::type_complexity)]
     type SystemData = (
         Entities<'a>,
         WriteStorage<'a, Chunk>,
-        ReadStorage<'a, ChunkMesh>,
+        WriteStorage<'a, ChunkMesh>,
         Read<'a, ChunkMap>,
+        ReadExpect<'a, Atlas>
     );
 
-    fn run(&mut self, (entities, mut chunks, mesh, chunk_map): Self::SystemData) {
+    fn run(&mut self, (entities, mut chunks, mut mesh, chunk_map, atlas): Self::SystemData) {
         let mut counter = 6;
-        for (entity, mesh) in (&entities, &mesh).join() {
+        for (entity, mesh) in (&entities, &mut mesh).join() {
             if let Some(chunk) = chunks.get(entity) {
                 if chunk.regenerate_mesh {
                     //println!("generating mesh for chunk {:?}", chunk.position);
@@ -27,7 +28,7 @@ impl<'a> System<'a> for ChunkMeshGeneration<'_> {
                         break;
                     }
                     counter -= 1;
-                    let vertices = self.0.mesh_vertices(&mesh.0).unwrap();
+                    let vertices = &mut mesh.0.vertices;
                     vertices.clear();
 
                     let mut north = None;
@@ -126,7 +127,7 @@ impl<'a> System<'a> for ChunkMeshGeneration<'_> {
                                     }
                                     if !discard {
                                         add_face(
-                                            self.1,
+                                            &atlas,
                                             chunk,
                                             [x as u8, y as u8, z as u8],
                                             dir,
@@ -137,8 +138,8 @@ impl<'a> System<'a> for ChunkMeshGeneration<'_> {
                             }
                         }
                     }
-                    let mesh = self.0.get_mut(&mesh.0).unwrap();
-                    mesh.update_vertices();
+                    //let mesh = self.0.get_mut(&mesh.0).unwrap();
+                    mesh.0.update_vertices();
                     chunks.get_mut(entity).unwrap().regenerate_mesh = false;
                 }
             }
@@ -189,7 +190,7 @@ fn check_discard(dir: Dir, x: u16, y: u16, z: u16, chunk: &Chunk) -> bool {
 }
 
 fn add_face(
-    atlas: &mut Atlas,
+    atlas: &Atlas,
     chunk: &Chunk,
     position: [u8; 3],
     face: Dir,

@@ -1,12 +1,11 @@
-use crate::blocks::Block;
+use crate::{blocks::Block, chunk_middle_ware::ChunkMeshMiddleWare};
 use crate::chunk::{Chunk, ChunkMap, CHUNK_SIZE};
 use crate::components::{ChunkMesh, Player, Position};
-use crate::renderer::{Renderer};
 use cgmath::{MetricSpace, Vector3};
-use specs::{Entities, Join, LazyUpdate, Read, ReadStorage, System, Write};
+use specs::{Entities, Join, LazyUpdate, Read, ReadStorage, System, Write, WriteExpect};
 
-pub struct GenerateChunks<'a>(pub &'a mut Renderer);
-impl<'a> System<'a> for GenerateChunks<'_> {
+pub struct GenerateChunks;
+impl<'a> System<'a> for GenerateChunks {
     #[allow(clippy::type_complexity)]
     type SystemData = (
         Entities<'a>,
@@ -14,12 +13,13 @@ impl<'a> System<'a> for GenerateChunks<'_> {
         Read<'a, LazyUpdate>,
         ReadStorage<'a, Player>,
         ReadStorage<'a, Position>,
+        WriteExpect<'a, ChunkMeshMiddleWare>
     );
 
-    fn run(&mut self, (entities, mut chunk_map, updater, player, positions): Self::SystemData) {
-        let mut create_chunk = |position, chunk, map: &mut ChunkMap| {
+    fn run(&mut self, (entities, mut chunk_map, updater, player, positions, chunk_mesh_middleware): Self::SystemData) {
+        let create_chunk = |position, chunk, map: &mut ChunkMap| {
             let new_chunk = entities.create();
-            let mesh = self.0.chunk_mesh_middleware.load_chunk_mesh(Vec::new(), position);
+            let mesh = chunk_mesh_middleware.load_chunk_mesh(Vec::new(), position);
             updater.insert(new_chunk, chunk);
             updater.insert(new_chunk, ChunkMesh(mesh));
             map.set_chunk(position, new_chunk);

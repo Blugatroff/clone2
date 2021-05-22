@@ -1,12 +1,11 @@
 use crate::components::{Model, Position, Rotation, Scale};
 use crate::manager::ModelManager;
 use cgmath::{Matrix3, SquareMatrix, Vector3};
-use finger_paint_wgpu::model::ModelMiddleWare;
-use finger_paint_wgpu::{Transform, WgpuRenderer};
+use finger_paint_wgpu::Transform;
 use specs::{Join, ReadStorage, System, Write, WriteStorage};
 
-pub struct RenderModels<'a>(pub &'a mut WgpuRenderer, pub &'a mut ModelMiddleWare);
-impl<'a> System<'a> for RenderModels<'_> {
+pub struct RenderModels;
+impl<'a> System<'a> for RenderModels {
     #[allow(clippy::type_complexity)]
     type SystemData = (
         Write<'a, ModelManager>,
@@ -37,9 +36,8 @@ impl<'a> System<'a> for RenderModels<'_> {
             let instances = &mut manager.get(&model.0).unwrap().instances;
             instances.push(t);
         }
-        let (device, queue) = self.0.device_and_queue();
         for model in manager.get_all_mut() {
-            model.update(device, queue);
+            model.update();
         }
     }
 }

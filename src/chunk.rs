@@ -98,9 +98,6 @@ impl ChunkMap {
         );
         (chunk_coords, block_coord)
     }
-    pub fn all(&self) -> Vec<(Vector3<i32>, Entity)> {
-        self.chunks.iter().map(|(k, v)| (*k, *v)).collect()
-    }
     pub fn ray_intersection(
         &self,
         chunks: &ReadStorage<'_, Chunk>,

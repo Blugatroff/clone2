@@ -4,11 +4,10 @@ use crate::{
     components::LookingAtMarker,
 };
 use cgmath::Vector3;
-use finger_paint_wgpu::lines::Lines;
 use specs::{Entities, Join, Read, ReadStorage, System, WriteStorage};
 
-pub struct LookingAtSystem<'a>(pub &'a mut Lines);
-impl<'a> System<'a> for LookingAtSystem<'a> {
+pub struct LookingAtSystem;
+impl<'a> System<'a> for LookingAtSystem {
     #[allow(clippy::type_complexity)]
     type SystemData = (
         Read<'a, ChunkMap>,
@@ -37,8 +36,6 @@ impl<'a> System<'a> for LookingAtSystem<'a> {
                 looked_at_blocks.remove(entity);
             }
         }
-        self.0.update();
-        self.0.lines().clear();
     }
 }
 pub struct LookingAtMarkerSystem;

@@ -22,12 +22,21 @@ impl ChunkVertex {
         }
     }
     pub fn new(position: Vector3<u8>, normal: Dir, uv_index: u32) -> Self {
-        ChunkVertex {
+        (position, normal, uv_index).into()
+    }
+}
+impl From<(Vector3<u8>, Dir, u32)> for ChunkVertex {
+    fn from((position, normal, uv_index): (Vector3<u8>, Dir, u32)) -> Self {
+        Self {
             v: pack(position, normal, uv_index),
         }
     }
 }
-
+impl Into<(Vector3<u8>, Dir, u32)> for ChunkVertex {
+    fn into(self) -> (Vector3<u8>, Dir, u32) {
+        unpack(self.v)
+    }
+}
 fn pack(position: Vector3<u8>, normal: Dir, uv_index: u32) -> u32 {
     let normal = normal as u32;
     let x = position.x as u32;
@@ -41,14 +50,14 @@ fn pack(position: Vector3<u8>, normal: Dir, uv_index: u32) -> u32 {
     v |= x << 26;
     v
 }
-#[allow(dead_code)]
+
 #[rustfmt::skip]
 fn unpack(v: u32) -> (Vector3<u8>, Dir, u32) {
-    let uv_index =  v & 0b00000000000000000000011111111111;
-    let dir      = (v & 0b00000000000000000011100000000000) >> 11;
-    let z        = (v & 0b00000000000011111100000000000000) >> 14;
-    let y        = (v & 0b00000011111100000000000000000000) >> 20;
-    let x        = (v & 0b11111100000000000000000000000000) >> 26;
+    let uv_index: u32 =  v & 0b00000000000000000000011111111111;
+    let dir     : u32 = (v & 0b00000000000000000011100000000000) >> 11;
+    let z       : u32 = (v & 0b00000000000011111100000000000000) >> 14;
+    let y       : u32 = (v & 0b00000011111100000000000000000000) >> 20;
+    let x       : u32 = (v & 0b11111100000000000000000000000000) >> 26;
 
     (
         Vector3::new(x as u8, y as u8, z as u8),

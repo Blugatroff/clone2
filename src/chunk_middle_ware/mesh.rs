@@ -142,42 +142,60 @@ impl ChunkMesh {
             label: Some("texture_bind_group_layout"),
         })
     }
-    pub fn position(&self) -> Vector3<i32> {
-        self.uniform.position.into()
-    }
 }
 
 pub struct ChunkMeshMiddleWare {
     device: Arc<Device>,
     shadow_pipeline: RenderPipeline,
     forward_pipeline: RenderPipeline,
-    chunk_meshes: Vec<Option<ChunkMesh>>,
     bind_group_layout: BindGroupLayout,
     diffuse_bind_group_layout: BindGroupLayout,
     bind_group: Option<BindGroup>,
     uv_buffer: Buffer,
     texture: Option<Texture>,
 }
-impl MiddleWare for ChunkMeshMiddleWare {
+impl ChunkMeshMiddleWare {
+    pub fn prepare<'a, 'b, I>(&'a self, chunks: I) -> ChunkMeshMiddleWareRenderable<'a, 'b, I>
+    where
+        I: Iterator<Item = &'b ChunkMesh> + Clone,
+    {
+        ChunkMeshMiddleWareRenderable {
+            inner: self,
+            meshes: chunks,
+        }
+    }
+}
+pub struct ChunkMeshMiddleWareRenderable<'a, 'b, I>
+where
+    I: Iterator<Item = &'b ChunkMesh> + Clone,
+{
+    inner: &'a ChunkMeshMiddleWare,
+    meshes: I,
+}
+
+impl<'a, 'b, I> MiddleWare for ChunkMeshMiddleWareRenderable<'a, 'b, I>
+where
+    I: Iterator<Item = &'b ChunkMesh> + Clone,
+{
     fn name(&self) -> &str {
         "ChunkMeshMiddleWare"
     }
 
-    fn render<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
+    fn render<'pass>(&'pass self, render_pass: &mut RenderPass<'pass>) {
         render_chunk_meshes(
-            &self.forward_pipeline,
+            &self.inner.forward_pipeline,
             render_pass,
-            self.bind_group.as_ref().unwrap(),
-            self.chunk_meshes.iter().flatten(),
-        );
+            self.inner.bind_group.as_ref().unwrap(),
+            self.meshes.clone(),
+        )
     }
 
-    fn render_shadow_pass<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
+    fn render_shadow_pass<'c>(&'c self, render_pass: &mut RenderPass<'c>) {
         render_chunk_meshes(
-            &self.shadow_pipeline,
+            &self.inner.shadow_pipeline,
             render_pass,
-            self.bind_group.as_ref().unwrap(),
-            self.chunk_meshes.iter().flatten().filter(|c| !c.active),
+            self.inner.bind_group.as_ref().unwrap(),
+            self.meshes.clone(),
         );
     }
 }
@@ -254,7 +272,6 @@ impl finger_paint_wgpu::MiddleWareConstructor for ChunkMeshMiddleWare {
             device,
             shadow_pipeline,
             forward_pipeline,
-            chunk_meshes: vec![],
             bind_group_layout,
             diffuse_bind_group_layout,
             bind_group: None,
@@ -303,22 +320,17 @@ impl ChunkMeshMiddleWare {
         })
     }
     pub fn load_chunk_mesh(
-        &mut self,
+        &self,
         vertices: Vec<ChunkVertex>,
         position: Vector3<i32>,
-    ) -> ChunkMeshHandle {
-        ChunkMeshHandle::new({
-            super::super::flat_middleware::put_in_first_slot(
-                &mut self.chunk_meshes,
-                ChunkMesh::new(
-                    self.device.clone(),
-                    vertices,
-                    position,
-                    &self.bind_group_layout,
-                    &self.uv_buffer,
-                ),
-            )
-        })
+    ) -> ChunkMesh {
+        ChunkMesh::new(
+            self.device.clone(),
+            vertices,
+            position,
+            &self.bind_group_layout,
+            &self.uv_buffer,
+        )
     }
     pub fn load_uvs(&mut self, uvs: &[[f32; 2]]) {
         self.uv_buffer = self.device.create_buffer_init(&BufferInitDescriptor {
@@ -332,27 +344,6 @@ impl ChunkMeshMiddleWare {
             &self.device,
         ));
     }
-    pub fn get_mut(&mut self, mesh: &ChunkMeshHandle) -> Option<&mut ChunkMesh> {
-        self.chunk_meshes[mesh.index].as_mut()
-    }
-    pub fn mesh_vertices(&mut self, mesh: &ChunkMeshHandle) -> Option<&mut Vec<ChunkVertex>> {
-        self.chunk_meshes[mesh.index]
-            .as_mut()
-            .map(|mesh| &mut mesh.vertices)
-    }
-    pub fn get_all(&mut self) -> &mut Vec<Option<ChunkMesh>> {
-        &mut self.chunk_meshes
-    }
-}
-
-#[derive(Clone)]
-pub struct ChunkMeshHandle {
-    pub index: usize,
-}
-impl ChunkMeshHandle {
-    pub fn new(index: usize) -> Self {
-        Self { index }
-    }
 }
 
 fn render_chunk_mesh<'a, 'b>(pass: &'b mut wgpu::RenderPass<'a>, chunk_mesh: &'a ChunkMesh) {
@@ -360,13 +351,14 @@ fn render_chunk_mesh<'a, 'b>(pass: &'b mut wgpu::RenderPass<'a>, chunk_mesh: &'a
     pass.set_bind_group(2, &chunk_mesh.bind_group, &[]);
     pass.draw(0..chunk_mesh.vertices.len() as u32, 0..1);
 }
-fn render_chunk_meshes<'a, 'b, U>(
+fn render_chunk_meshes<'a, 'b, 'c, U>(
     pipeline: &'a RenderPipeline,
     pass: &'b mut wgpu::RenderPass<'a>,
     bind_group: &'a BindGroup,
     mut chunk_meshes: U,
 ) where
-    U: Iterator<Item = &'a ChunkMesh>,
+    U: Iterator<Item = &'c ChunkMesh>,
+    'c: 'a
 {
     if let Some(first) = chunk_meshes.next() {
         pass.set_pipeline(&pipeline);

@@ -1,23 +1,24 @@
 use crate::components::{FlatMesh, Position, Scale};
-use crate::flat_middleware::{FlatMiddleWare, Rect};
+use crate::flat_middleware::Rect;
 use cgmath::Vector2;
-use specs::{Join, ReadStorage, System, WriteStorage};
+use specs::{Entities, Join, ReadStorage, System, WriteStorage};
 
-pub struct RenderFlatMeshes<'a>(pub &'a mut FlatMiddleWare);
-impl<'a> System<'a> for RenderFlatMeshes<'_> {
+pub struct RenderFlatMeshes;
+impl<'a> System<'a> for RenderFlatMeshes {
     #[allow(clippy::type_complexity)]
     type SystemData = (
+        Entities<'a>,
         WriteStorage<'a, FlatMesh>,
         ReadStorage<'a, Position>,
         ReadStorage<'a, Scale>,
     );
 
-    fn run(&mut self, (mut meshes, position, scale): Self::SystemData) {
-        for mesh in self.0.get_all().iter_mut().flatten() {
-            mesh.instances.clear();
+    fn run(&mut self, (entities, mut meshes, position, scale): Self::SystemData) {
+        for (_, mesh) in (&entities, &mut meshes).join() {
+            mesh.0.instances.clear();
         }
         for (model, position, scale) in (&mut meshes, &position, (&scale).maybe()).join() {
-            self.0.get_mut(&model.0).unwrap().instances.push(Rect {
+            model.0.instances.push(Rect {
                 position: position.0.truncate(),
                 size: if let Some(scale) = scale {
                     Vector2::new(1.0 * scale.0.x, 1.0 * scale.0.y)
@@ -26,10 +27,8 @@ impl<'a> System<'a> for RenderFlatMeshes<'_> {
                 },
             })
         }
-        self.0
-            .get_all()
-            .iter_mut()
-            .flatten()
-            .for_each(|m| m.update());
+        for (_, mesh) in (&entities, &mut meshes).join() {
+            mesh.0.update();
+        }
     }
 }

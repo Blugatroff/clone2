@@ -14,7 +14,7 @@ pub fn setup_player(world: &mut World, sphere_model: EcsModelHandle) {
             yaw: 0.0,
             pitch: 0.0,
             speed: 2.5,
-            key_turn_speed: 5.0,
+            key_turn_speed: 2.5,
             boost: 3.0,
         })
         .with(components::Camera { fov: PI / 2.0 })

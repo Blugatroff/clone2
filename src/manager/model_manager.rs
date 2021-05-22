@@ -28,9 +28,7 @@ impl ModelManager {
         EcsModelHandle { index }
     }
     pub fn remove(&mut self, handle: EcsModelHandle) {
-        if let Some(model) = self.models[handle.index].take() {
-            drop(model)
-        }
+        self.models[handle.index].take();
     }
     pub fn get_instances(&mut self, handle: &EcsModelHandle) -> Option<&mut Vec<Transform>> {
         self.get(handle).map(|model| &mut model.instances)

@@ -133,7 +133,17 @@ pub struct FlatMiddleWare {
     device: Arc<Device>,
     queue: Arc<Queue>,
     forward_pipeline: RenderPipeline,
-    flat_meshes: Vec<Option<FlatMesh>>,
+}
+impl FlatMiddleWare {
+    pub fn prepare<'a, 'b, I>(&'a self, meshes: I) -> FlatMiddleWareRenderable<'a, 'b, I>
+    where
+        I: Iterator<Item = &'b FlatMesh> + Clone,
+    {
+        FlatMiddleWareRenderable {
+            inner: self,
+            meshes,
+        }
+    }
 }
 
 impl MiddleWareConstructor for FlatMiddleWare {
@@ -194,20 +204,31 @@ impl MiddleWareConstructor for FlatMiddleWare {
             device,
             queue,
             forward_pipeline,
-            flat_meshes: vec![],
         }
     }
 }
-impl MiddleWare for FlatMiddleWare {
-    fn name(&self) -> &str { "FlatMeshMiddleWare" }
+pub struct FlatMiddleWareRenderable<'a, 'b, I>
+where
+    I: Iterator<Item = &'b FlatMesh> + Clone,
+{
+    inner: &'a FlatMiddleWare,
+    meshes: I,
+}
+impl<'a, 'b, I> MiddleWare for FlatMiddleWareRenderable<'a, 'b, I>
+where
+    I: Iterator<Item = &'b FlatMesh> + Clone,
+{
+    fn name(&self) -> &str {
+        "FlatMeshMiddleWare"
+    }
 
     fn prepare(&self) {}
 
-    fn render<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
+    fn render<'pass>(&'pass self, render_pass: &mut RenderPass<'pass>) {
         render_flat_meshes(
-            &self.forward_pipeline,
+            &self.inner.forward_pipeline,
             render_pass,
-            self.flat_meshes.iter().flatten(),
+            self.meshes.clone(),
         );
     }
 
@@ -217,29 +238,8 @@ impl MiddleWare for FlatMiddleWare {
 }
 
 impl FlatMiddleWare {
-    pub fn load_flat_mesh<P: AsRef<Path>>(
-        &mut self,
-        path: P,
-    ) -> FlatMeshHandle {
-        FlatMeshHandle::new({
-            put_in_first_slot(&mut self.flat_meshes, FlatMesh::new(self.device.clone(), &self.queue, path))
-        })
-    }
-    pub fn get_mut(&mut self, mesh: &FlatMeshHandle) -> Option<&mut FlatMesh> {
-        self.flat_meshes[mesh.index].as_mut()
-    }
-    pub fn get_all(&mut self) -> &mut Vec<Option<FlatMesh>> {
-        &mut self.flat_meshes
-    }
-}
-
-#[derive(Clone)]
-pub struct FlatMeshHandle {
-    pub index: usize,
-}
-impl FlatMeshHandle {
-    pub fn new(index: usize) -> Self {
-        Self { index }
+    pub fn load_flat_mesh<P: AsRef<Path>>(&mut self, path: P) -> FlatMesh {
+        FlatMesh::new(self.device.clone(), &self.queue, path)
     }
 }
 
@@ -251,12 +251,13 @@ fn render_flat_mesh<'a, 'b>(pass: &'b mut wgpu::RenderPass<'a>, flat_mesh: &'a F
         pass.draw(0..6, 0..flat_mesh.instances.len() as u32);
     }
 }
-fn render_flat_meshes<'a, 'b, U>(
+fn render_flat_meshes<'a, 'b, 'c, U>(
     pipeline: &'a RenderPipeline,
     pass: &'b mut wgpu::RenderPass<'a>,
     mut chunk_meshes: U,
 ) where
-    U: Iterator<Item = &'a FlatMesh>,
+    U: Iterator<Item = &'c FlatMesh>,
+    'c: 'a,
 {
     if let Some(first) = chunk_meshes.next() {
         pass.push_debug_group("flat meshes");
@@ -267,14 +268,4 @@ fn render_flat_meshes<'a, 'b, U>(
         }
         pass.pop_debug_group();
     }
-}
-pub fn put_in_first_slot<T>(vec: &mut Vec<Option<T>>, object: T) -> usize {
-    for (i, o) in vec.iter_mut().enumerate() {
-        if o.is_none() {
-            *o = Some(object);
-            return i;
-        }
-    }
-    vec.push(Some(object));
-    vec.len() - 1
 }

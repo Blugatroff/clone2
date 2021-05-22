@@ -1,12 +1,16 @@
-use crate::renderer::Renderer;
-use specs::{ReadExpect, System};
+use finger_paint_wgpu::WgpuRenderer;
+use specs::{ReadExpect, System, WriteExpect};
 
-pub struct UpdateCamera<'a>(pub &'a mut Renderer);
-impl<'a> System<'a> for UpdateCamera<'_> {
-    type SystemData = ReadExpect<'a, finger_paint_wgpu::Camera>;
+pub struct UpdateCamera;
+impl<'a> System<'a> for UpdateCamera {
+    type SystemData = (
+        ReadExpect<'a, finger_paint_wgpu::Camera>,
+        WriteExpect<'a, WgpuRenderer>,
+    );
 
-    fn run(&mut self, camera: Self::SystemData) {
-        let renderer = &mut self.0;
-        *renderer.renderer.camera() = *camera;
+    fn run(&mut self, (mut camera, mut renderer): Self::SystemData) {
+        let camera = &mut camera;
+        let renderer = &mut renderer;
+        *renderer.camera() = **camera;
     }
 }

@@ -2,14 +2,16 @@ mod setup_cross_hair;
 mod setup_highlight_cube;
 mod setup_player;
 
-use crate::{chunk::{Chunk, ChunkMap, CHUNK_SIZE}, components::LookedAt};
 use crate::components::{
     Camera, ChunkMesh, FirstPersonController, FlatMesh, LookingAtMarker, Model, Player, Position,
     RealLight, Rotation, Scale, ThirdPersonCamera, UvMesh, Velocity,
 };
 use crate::manager::{ModelManager, UvMeshManager};
-use crate::renderer::Renderer;
 use crate::resources::DeltaTime;
+use crate::{
+    chunk::{Chunk, ChunkMap, CHUNK_SIZE},
+    components::LookedAt,
+};
 use cgmath::Vector3;
 use finger_paint_wgpu::ViewMatrixMode;
 use specs::Builder;

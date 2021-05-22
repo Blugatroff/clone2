@@ -1,19 +1,20 @@
 use crate::chunk::{Chunk, ChunkMap};
 use crate::components::{Player, Position};
 use cgmath::MetricSpace;
-use specs::{Join, ReadStorage, System, Write, WriteStorage};
+use specs::{Entities, Join, ReadStorage, System, Write, WriteStorage};
 
 pub struct RemoveChunks;
 impl<'a> System<'a> for RemoveChunks {
     #[allow(clippy::type_complexity)]
     type SystemData = (
-        Write<'a, ChunkMap>,
         ReadStorage<'a, Player>,
         ReadStorage<'a, Position>,
         WriteStorage<'a, Chunk>,
+        Entities<'a>,
+        Write<'a, ChunkMap>,
     );
 
-    fn run(&mut self, (mut chunk_map, player, positions, mut chunks): Self::SystemData) {
+    fn run(&mut self, (player, positions, chunks, entities, mut chunk_map): Self::SystemData) {
         let range = 8;
         let mut player_positions = Vec::new();
 
@@ -22,19 +23,23 @@ impl<'a> System<'a> for RemoveChunks {
             p.y = 0;
             player_positions.push(p);
         }
-        for (chunk_pos, chunk) in chunk_map.all() {
+        let mut chunks_to_remove = Vec::new();
+        for (entity, chunk) in (&entities, &chunks).join() {
             let mut remove = true;
+            let position = chunk.position;
             for player_position in &player_positions {
-                if chunk_pos.distance2(*player_position) < range * range {
+                if position.distance2(*player_position) < range * range {
                     remove = false;
-                    break;
                 }
             }
             if remove {
-                println!("removing chunk {:?}", chunk_pos);
-                chunks.remove(chunk);
-                chunk_map.remove_chunk(chunk_pos);
+                chunks_to_remove.push(entity);
             }
+        }
+        for chunk in chunks_to_remove {
+            println!("deleting chunk");
+            chunk_map.remove_chunk(chunks.get(chunk).unwrap().position);
+            entities.delete(chunk).unwrap();
         }
     }
 }

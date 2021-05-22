@@ -1,9 +1,14 @@
 use super::*;
 use crate::dir::Dir;
 use cgmath::{Matrix3, SquareMatrix, Vector2};
-use finger_paint_wgpu::{texture::Texture, uv_mesh::UvVertex, wgpu::FilterMode};
+use finger_paint_wgpu::{
+    texture::Texture,
+    uv_mesh::{UvMeshMiddleWare, UvVertex},
+    wgpu::FilterMode,
+    WgpuRenderer,
+};
 
-pub fn setup_highlight_cube(world: &mut World, renderer: &mut Renderer) {
+pub fn setup_highlight_cube(world: &mut World, uv_mesh_middleware: &mut UvMeshMiddleWare) {
     let mut vertices = vec![];
     let mut add = |position: Vector3<i32>, dir: Dir, uv| {
         let position = Vector3::new(position.x as f32, position.y as f32, position.z as f32) * 1.1
@@ -62,17 +67,21 @@ pub fn setup_highlight_cube(world: &mut World, renderer: &mut Renderer) {
 
     let data = [0, 0, 0, 192, 0, 0, 0, 192, 0, 0, 0, 192, 0, 0, 0, 192];
 
-    let (device, queue) = renderer.renderer.device_and_queue();
-    let texture = Texture::from_raw(
-        device,
-        queue,
-        (2, 2),
-        &data,
-        FilterMode::Nearest,
-        FilterMode::Nearest,
-        false,
-    );
-    let mut uv_mesh = renderer.uv_mesh_middleware.create_uv_mesh(vertices, None, &texture);
+    let texture = {
+        let renderer = world.fetch::<WgpuRenderer>();
+        let (device, queue) = renderer.device_and_queue();
+        Texture::from_raw(
+            device,
+            queue,
+            (2, 2),
+            &data,
+            FilterMode::Nearest,
+            FilterMode::Nearest,
+            false,
+        )
+    };
+
+    let mut uv_mesh = uv_mesh_middleware.create_uv_mesh(vertices, None, &texture);
     uv_mesh.transparent = true;
     let uv_mesh = world.fetch_mut::<UvMeshManager>().insert(uv_mesh);
 
