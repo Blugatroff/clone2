@@ -1,9 +1,8 @@
+use crate::dir::Dir;
 use crate::manager::{EcsModelHandle, EcsUvMesh};
 use cgmath::{Matrix3, Vector3};
-use finger_paint_wgpu::{LightAttenuation, ViewMatrixMode};
-use specs::{Component, FlaggedStorage};
+use specs::Component;
 use specs::{DenseVecStorage, Entity};
-use crate::dir::Dir;
 
 #[derive(Component, Debug, Clone, Copy)]
 pub struct Position(pub Vector3<f32>);
@@ -51,49 +50,28 @@ pub struct FirstPersonController {
 #[derive(Component, Debug)]
 pub struct Player;
 
-pub struct RealLight {
-    pub real_light: finger_paint_wgpu::RealLight,
-    pub rlh: Option<finger_paint_wgpu::RLH>,
-}
-
-#[allow(dead_code)]
-impl RealLight {
-    pub fn new(
-        color: [f32; 4],
-        default: f32,
-        attenuation: LightAttenuation,
-        mode: ViewMatrixMode,
-        up: Vector3<f32>,
-    ) -> Self {
-        Self {
-            real_light: finger_paint_wgpu::RealLight {
-                camera: finger_paint_wgpu::Camera::new(
-                    Vector3::new(0.0, 0.0, -1.0),
-                    Vector3::new(0.0, 0.0, 0.0),
-                    up,
-                    mode,
-                ),
-                color,
-                default,
-                attenuation,
-                enabled: false,
-            },
-            rlh: None,
-        }
-    }
-}
-impl Component for RealLight {
-    type Storage = FlaggedStorage<Self, DenseVecStorage<Self>>;
-}
+#[derive(Component)]
+pub struct RealLight(pub finger_paint_wgpu::RLH);
 
 #[derive(Component, Debug)]
 pub struct LookedAt {
     pub intersection: Vector3<f32>,
     pub coords: Vector3<i32>,
-    pub dir: Dir
+    pub dir: Dir,
 }
 
 #[derive(Component, Debug)]
 pub struct LookingAtMarker {
     pub player: Entity,
+}
+
+#[derive(Component, Debug)]
+pub struct BlockHighlightCube(pub Entity);
+
+/// stores the Player so the Sun and more importantly its shadow can follow the Player
+#[derive(Component, Debug)]
+pub struct Sun {
+    pub player: Entity,
+    pub size: f32,
+    pub distance: f32,
 }

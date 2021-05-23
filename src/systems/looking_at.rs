@@ -1,7 +1,7 @@
-use crate::components::{LookedAt, Player, Position, Rotation};
+use crate::chunk::Chunk;
 use crate::{
-    chunk::{Chunk, ChunkMap},
-    components::LookingAtMarker,
+    chunk_map::ChunkMap,
+    components::{LookedAt, Player, Position, Rotation},
 };
 use cgmath::Vector3;
 use specs::{Entities, Join, Read, ReadStorage, System, WriteStorage};
@@ -21,35 +21,19 @@ impl<'a> System<'a> for LookingAtSystem {
 
     fn run(
         &mut self,
-        (chunk_map, chunks, players, entities, positions, rotations, mut looked_at_blocks): Self::SystemData,
+        (chunk_map, chunks, players, entities, positions, rotations, mut looked_at): Self::SystemData,
     ) {
         for (_, entity, pos, rot) in (&players, &entities, &positions, &rotations).join() {
             if let Some(target) =
                 chunk_map.ray_intersection(&chunks, pos.0, (rot.0 * Vector3::unit_x()) * 5.0)
             {
-                if let Some(looked_at_block) = looked_at_blocks.get_mut(entity) {
+                if let Some(looked_at_block) = looked_at.get_mut(entity) {
                     *looked_at_block = target;
                 } else {
-                    looked_at_blocks.insert(entity, target).unwrap();
+                    looked_at.insert(entity, target).unwrap();
                 }
             } else {
-                looked_at_blocks.remove(entity);
-            }
-        }
-    }
-}
-pub struct LookingAtMarkerSystem;
-impl<'a> System<'a> for LookingAtMarkerSystem {
-    type SystemData = (
-        ReadStorage<'a, LookingAtMarker>,
-        ReadStorage<'a, LookedAt>,
-        WriteStorage<'a, Position>,
-    );
-
-    fn run(&mut self, (markers, looked_at_positions, mut positions): Self::SystemData) {
-        for (looking_at_marker, position) in (&markers, &mut positions).join() {
-            if let Some(target) = looked_at_positions.get(looking_at_marker.player) {
-                position.0 = target.intersection;
+                looked_at.remove(entity);
             }
         }
     }

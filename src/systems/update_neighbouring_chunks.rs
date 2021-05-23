@@ -1,4 +1,4 @@
-use crate::chunk::{Chunk, ChunkMap};
+use crate::{chunk::Chunk, chunk_map::ChunkMap};
 use cgmath::Vector3;
 use specs::{Entities, Join, Read, System, WriteStorage};
 

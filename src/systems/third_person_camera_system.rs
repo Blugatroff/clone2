@@ -1,5 +1,8 @@
-use crate::components::{Position, Rotation, ThirdPersonCamera};
 use crate::resources::DeltaTime;
+use crate::{
+    components::{Position, Rotation, ThirdPersonCamera},
+    math_utils::mix,
+};
 use cgmath::Vector3;
 use specs::{Entities, Join, Read, ReadStorage, System, WriteStorage};
 
@@ -34,8 +37,4 @@ impl<'a> System<'a> for ThirdPersonCameraSystem {
             }
         }
     }
-}
-
-fn mix(start: Vector3<f32>, end: Vector3<f32>, part: f32) -> Vector3<f32> {
-    start + (end - start) * part
 }

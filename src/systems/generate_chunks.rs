@@ -1,6 +1,9 @@
-use crate::{blocks::Block, chunk_middle_ware::ChunkMeshMiddleWare};
-use crate::chunk::{Chunk, ChunkMap, CHUNK_SIZE};
 use crate::components::{ChunkMesh, Player, Position};
+use crate::{blocks::Block, chunk_middle_ware::ChunkMeshMiddleWare};
+use crate::{
+    chunk::{Chunk, CHUNK_SIZE},
+    chunk_map::ChunkMap,
+};
 use cgmath::{MetricSpace, Vector3};
 use specs::{Entities, Join, LazyUpdate, Read, ReadStorage, System, Write, WriteExpect};
 
@@ -13,10 +16,13 @@ impl<'a> System<'a> for GenerateChunks {
         Read<'a, LazyUpdate>,
         ReadStorage<'a, Player>,
         ReadStorage<'a, Position>,
-        WriteExpect<'a, ChunkMeshMiddleWare>
+        WriteExpect<'a, ChunkMeshMiddleWare>,
     );
 
-    fn run(&mut self, (entities, mut chunk_map, updater, player, positions, chunk_mesh_middleware): Self::SystemData) {
+    fn run(
+        &mut self,
+        (entities, mut chunk_map, updater, player, positions, chunk_mesh_middleware): Self::SystemData,
+    ) {
         let create_chunk = |position, chunk, map: &mut ChunkMap| {
             let new_chunk = entities.create();
             let mesh = chunk_mesh_middleware.load_chunk_mesh(Vec::new(), position);
@@ -29,7 +35,7 @@ impl<'a> System<'a> for GenerateChunks {
             let mut p = ChunkMap::f_coords_to_chunk_coords(position.0);
             p.y = 0;
 
-            let range = 6;
+            let range = 2;
             for x in -range..range + 1 {
                 for z in -range..range + 1 {
                     let x = x + p.x;

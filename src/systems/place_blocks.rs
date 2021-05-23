@@ -1,12 +1,8 @@
 use std::sync::{Arc, Mutex};
 
-use crate::components::Player;
-use crate::{blocks::Block, components::LookedAt};
-use crate::{
-    chunk::{Chunk, ChunkMap},
-    chunk_middle_ware::ChunkMeshMiddleWare,
-    components::ChunkMesh,
-};
+use crate::{blocks::Block, components::LookedAt, resources::SoundPlayer};
+use crate::{chunk::Chunk, chunk_middle_ware::ChunkMeshMiddleWare, components::ChunkMesh};
+use crate::{chunk_map::ChunkMap, components::Player};
 use cgmath::Vector3;
 use simple_winit::input::Input;
 use specs::{Entities, Join, ReadExpect, ReadStorage, System, Write, WriteStorage};
@@ -21,7 +17,7 @@ impl<'a> System<'a> for PlaceBlocks {
         ReadStorage<'a, Player>,
         ReadStorage<'a, LookedAt>,
         ReadExpect<'a, Arc<Mutex<Input>>>,
-        ReadExpect<'a, ton::Player>,
+        ReadExpect<'a, SoundPlayer>,
         Entities<'a>,
         WriteStorage<'a, ChunkMesh>,
         ReadExpect<'a, ChunkMeshMiddleWare>,
@@ -65,7 +61,7 @@ impl<'a> System<'a> for PlaceBlocks {
                         &std::fs::read_to_string("./sand.json").unwrap(),
                     )
                     .unwrap();
-                    player.play(sand).unwrap().detach();
+                    player.play(sand).detach();
                     chunk_map.set_chunk(chunk_coords, chunk);
                 }
             }

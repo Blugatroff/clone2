@@ -32,9 +32,9 @@ impl From<(Vector3<u8>, Dir, u32)> for ChunkVertex {
         }
     }
 }
-impl Into<(Vector3<u8>, Dir, u32)> for ChunkVertex {
-    fn into(self) -> (Vector3<u8>, Dir, u32) {
-        unpack(self.v)
+impl From<ChunkVertex> for (Vector3<u8>, Dir, u32) {
+    fn from(v: ChunkVertex) -> Self {
+        unpack(v.v)
     }
 }
 fn pack(position: Vector3<u8>, normal: Dir, uv_index: u32) -> u32 {

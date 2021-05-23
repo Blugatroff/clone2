@@ -2,15 +2,19 @@ mod setup_cross_hair;
 mod setup_highlight_cube;
 mod setup_player;
 
-use crate::components::{
-    Camera, ChunkMesh, FirstPersonController, FlatMesh, LookingAtMarker, Model, Player, Position,
-    RealLight, Rotation, Scale, ThirdPersonCamera, UvMesh, Velocity,
-};
-use crate::manager::{ModelManager, UvMeshManager};
-use crate::resources::DeltaTime;
 use crate::{
-    chunk::{Chunk, ChunkMap, CHUNK_SIZE},
+    chunk::{Chunk, CHUNK_SIZE},
     components::LookedAt,
+    resources::SoundPlayer,
+};
+use crate::{chunk_map::ChunkMap, components::*};
+use crate::{
+    components::BlockHighlightCube,
+    manager::{ModelManager, UvMeshManager},
+};
+use crate::{
+    components::Sun,
+    resources::{DeltaTime, Time},
 };
 use cgmath::Vector3;
 use finger_paint_wgpu::ViewMatrixMode;
@@ -40,9 +44,13 @@ pub fn setup(world: &mut World) {
     world.register::<FlatMesh>();
     world.register::<LookedAt>();
     world.register::<LookingAtMarker>();
+    world.register::<BlockHighlightCube>();
+    world.register::<Sun>();
     world.insert(UvMeshManager::default());
     world.insert(ModelManager::default());
     world.insert(DeltaTime(0.0));
+    world.insert(Time::default());
+    world.insert(SoundPlayer::new());
     world.insert(finger_paint_wgpu::Camera::new(
         Vector3::new(0.0, 0.0, 0.0),
         Vector3::new(0.0, 0.0, 0.0),

@@ -187,6 +187,7 @@ where
             render_pass,
             self.inner.bind_group.as_ref().unwrap(),
             self.meshes.clone(),
+            2,
         )
     }
 
@@ -196,6 +197,7 @@ where
             render_pass,
             self.inner.bind_group.as_ref().unwrap(),
             self.meshes.clone(),
+            1,
         );
     }
 }
@@ -209,9 +211,16 @@ impl finger_paint_wgpu::MiddleWareConstructor for ChunkMeshMiddleWare {
         let vs_shader = renderer.load_spirv(include_bytes!("vs.glsl.spv"));
         let fs_shader = renderer.load_spirv(include_bytes!("fs.glsl.spv"));
         let device = renderer.device();
+        let bind_group_layout = ChunkMesh::bind_group_layout(&device);
+        let shadow_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some(&format!("shadow pipeline layout: {}", "chunk mesh")),
+                bind_group_layouts: &[&renderer.shadow_bind_group_layout(), &bind_group_layout],
+                push_constant_ranges: &[],
+            });
         let shadow_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("shadow pass pipeline"),
-            layout: Some(&renderer.default_shadow_pipeline_layout()),
+            label: Some("chunk shadow pass pipeline"),
+            layout: Some(&shadow_pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shadow_shader,
                 entry_point: "main",
@@ -228,7 +237,6 @@ impl finger_paint_wgpu::MiddleWareConstructor for ChunkMeshMiddleWare {
             multisample: wgpu::MultisampleState::default(),
         });
         let diffuse_bind_group_layout = ChunkMesh::diffuse_bind_group_layout(&device);
-        let bind_group_layout = ChunkMesh::bind_group_layout(&device);
         let forward_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some(&format!("forward pipeline layout: {}", "chunk mesh")),
@@ -319,11 +327,7 @@ impl ChunkMeshMiddleWare {
             ],
         })
     }
-    pub fn load_chunk_mesh(
-        &self,
-        vertices: Vec<ChunkVertex>,
-        position: Vector3<i32>,
-    ) -> ChunkMesh {
+    pub fn load_chunk_mesh(&self, vertices: Vec<ChunkVertex>, position: Vector3<i32>) -> ChunkMesh {
         ChunkMesh::new(
             self.device.clone(),
             vertices,
@@ -346,9 +350,13 @@ impl ChunkMeshMiddleWare {
     }
 }
 
-fn render_chunk_mesh<'a, 'b>(pass: &'b mut wgpu::RenderPass<'a>, chunk_mesh: &'a ChunkMesh) {
+fn render_chunk_mesh<'a, 'b>(
+    pass: &'b mut wgpu::RenderPass<'a>,
+    chunk_mesh: &'a ChunkMesh,
+    bgi: u32,
+) {
     pass.set_vertex_buffer(0, chunk_mesh.vertex_buffer.slice(..));
-    pass.set_bind_group(2, &chunk_mesh.bind_group, &[]);
+    pass.set_bind_group(bgi, &chunk_mesh.bind_group, &[]);
     pass.draw(0..chunk_mesh.vertices.len() as u32, 0..1);
 }
 fn render_chunk_meshes<'a, 'b, 'c, U>(
@@ -356,16 +364,19 @@ fn render_chunk_meshes<'a, 'b, 'c, U>(
     pass: &'b mut wgpu::RenderPass<'a>,
     bind_group: &'a BindGroup,
     mut chunk_meshes: U,
+    bgi: u32,
 ) where
     U: Iterator<Item = &'c ChunkMesh>,
-    'c: 'a
+    'c: 'a,
 {
     if let Some(first) = chunk_meshes.next() {
         pass.set_pipeline(&pipeline);
-        pass.set_bind_group(1, bind_group, &[]);
-        render_chunk_mesh(pass, first);
+        if bgi != 1 {
+            pass.set_bind_group(1, bind_group, &[]);
+        }
+        render_chunk_mesh(pass, first, bgi);
         for chunk_mesh in chunk_meshes {
-            render_chunk_mesh(pass, chunk_mesh);
+            render_chunk_mesh(pass, chunk_mesh, bgi);
         }
     }
 }

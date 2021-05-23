@@ -1,5 +1,5 @@
-use crate::chunk::{Chunk, ChunkMap};
 use crate::components::{Player, Position};
+use crate::{chunk::Chunk, chunk_map::ChunkMap};
 use cgmath::MetricSpace;
 use specs::{Entities, Join, ReadStorage, System, Write, WriteStorage};
 

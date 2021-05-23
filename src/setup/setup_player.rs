@@ -5,7 +5,7 @@ use crate::{
 };
 use cgmath::{Matrix3, SquareMatrix};
 
-pub fn setup_player(world: &mut World, sphere_model: EcsModelHandle) {
+pub fn setup_player(world: &mut World, sphere_model: EcsModelHandle) -> Entity {
     let player = world
         .create_entity()
         .with(Position(Vector3::new(0.0, 0.0, 0.0)))
@@ -20,6 +20,7 @@ pub fn setup_player(world: &mut World, sphere_model: EcsModelHandle) {
         .with(components::Camera { fov: PI / 2.0 })
         .with(Player)
         .build();
+    setup_highlight_cube(world, player);
     world
         .create_entity()
         .with(Position(Vector3::new(0.0, 0.0, 0.0)))
@@ -28,4 +29,5 @@ pub fn setup_player(world: &mut World, sphere_model: EcsModelHandle) {
         .with(Model(sphere_model))
         .with(LookingAtMarker { player })
         .build();
+    player
 }

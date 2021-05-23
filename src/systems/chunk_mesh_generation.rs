@@ -1,9 +1,9 @@
-use crate::blocks::Side;
 use crate::blocks::{Atlas, Block};
-use crate::chunk::{Chunk, ChunkMap, CHUNK_SIZE};
+use crate::chunk::{Chunk, CHUNK_SIZE};
 use crate::chunk_middle_ware::ChunkVertex;
 use crate::components::ChunkMesh;
 use crate::dir::Dir;
+use crate::{blocks::Side, chunk_map::ChunkMap};
 use cgmath::Vector3;
 use specs::{Entities, Join, Read, ReadExpect, System, WriteStorage};
 
@@ -15,7 +15,7 @@ impl<'a> System<'a> for ChunkMeshGeneration {
         WriteStorage<'a, Chunk>,
         WriteStorage<'a, ChunkMesh>,
         Read<'a, ChunkMap>,
-        ReadExpect<'a, Atlas>
+        ReadExpect<'a, Atlas>,
     );
 
     fn run(&mut self, (entities, mut chunks, mut mesh, chunk_map, atlas): Self::SystemData) {

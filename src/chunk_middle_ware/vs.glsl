@@ -30,8 +30,9 @@ void main() {
     int y         = (v & 0x03F00000) >> 20;
     int x         = (v & 0xFC000000) >> 26;
 
-    gl_Position = view_proj * (vec4(ivec3(x, y, z) + position * chunk_size, 1.0));
-    out_position = gl_Position.xyz;
+    vec4 pos = (vec4(ivec3(x, y, z) + position * chunk_size, 1.0));
+    gl_Position = view_proj * pos;
+    out_position = pos.xyz;
     out_tex_coords = tex_coords[tex_index];
     if (normal == 0) {
         out_normal = vec3(0.0, 0.0, 1.0);

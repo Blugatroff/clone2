@@ -1,10 +1,16 @@
-use crate::components::{Position, Rotation};
-use crate::{components, rotation_matrix_from_direction, DeltaTime};
+use crate::{components, resources::DeltaTime};
+use crate::{
+    components::{Position, Rotation},
+    math_utils::rotation_matrix_from_direction,
+};
 use cgmath::{InnerSpace, Vector3};
 use simple_winit::input::Input;
 use simple_winit::input::Key::ScanCode;
 use specs::{Join, Read, ReadExpect, System, WriteStorage};
-use std::{f32::consts::PI, sync::{Arc, Mutex}};
+use std::{
+    f32::consts::PI,
+    sync::{Arc, Mutex},
+};
 
 pub struct FirstPersonController;
 impl<'a> System<'a> for FirstPersonController {
@@ -14,7 +20,7 @@ impl<'a> System<'a> for FirstPersonController {
         WriteStorage<'a, components::FirstPersonController>,
         WriteStorage<'a, Position>,
         WriteStorage<'a, Rotation>,
-        ReadExpect<'a, Arc<Mutex<Input>>>
+        ReadExpect<'a, Arc<Mutex<Input>>>,
     );
 
     fn run(&mut self, (dt, mut controllers, mut position, mut rotation, input): Self::SystemData) {

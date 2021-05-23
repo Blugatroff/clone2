@@ -1,8 +1,8 @@
 use std::sync::{Arc, Mutex};
 
-use crate::chunk::{Chunk, ChunkMap};
-use crate::components::Player;
 use crate::{blocks::Block, components::LookedAt};
+use crate::{chunk::Chunk, chunk_map::ChunkMap};
+use crate::{components::Player, resources::SoundPlayer};
 use simple_winit::input::Input;
 use specs::{Join, Read, ReadExpect, ReadStorage, System, WriteStorage};
 
@@ -16,10 +16,13 @@ impl<'a> System<'a> for BreakBlocks {
         ReadStorage<'a, Player>,
         ReadStorage<'a, LookedAt>,
         ReadExpect<'a, Arc<Mutex<Input>>>,
-        ReadExpect<'a, ton::Player>
+        ReadExpect<'a, SoundPlayer>,
     );
 
-    fn run(&mut self, (chunk_map, mut chunks, players, looked_at, input, player): Self::SystemData) {
+    fn run(
+        &mut self,
+        (chunk_map, mut chunks, players, looked_at, input, player): Self::SystemData,
+    ) {
         let input = input.lock().unwrap();
         for (_, looked_at) in (&players, &looked_at).join() {
             if input.button_pressed(simple_winit::input::MouseButton::Left) {
@@ -31,18 +34,27 @@ impl<'a> System<'a> for BreakBlocks {
                     match chunk.get_block(block_coord) {
                         Block::Empty => {}
                         Block::Dirt => {
-                            let sand = ton::PlayableSfxr::load_from_json(&std::fs::read_to_string("./dirt.json").unwrap()).unwrap();
-                            player.play(sand).unwrap().detach();
+                            let sand = ton::PlayableSfxr::load_from_json(
+                                &std::fs::read_to_string("./dirt.json").unwrap(),
+                            )
+                            .unwrap();
+                            player.play(sand).detach();
                         }
                         Block::Stone => {}
                         Block::Sand => {
-                            let sand = ton::PlayableSfxr::load_from_json(&std::fs::read_to_string("./sand.json").unwrap()).unwrap();
-                            player.play(sand).unwrap().detach();
+                            let sand = ton::PlayableSfxr::load_from_json(
+                                &std::fs::read_to_string("./sand.json").unwrap(),
+                            )
+                            .unwrap();
+                            player.play(sand).detach();
                         }
                         Block::Water => {}
                         Block::Grass => {
-                            let sand = ton::PlayableSfxr::load_from_json(&std::fs::read_to_string("./dirt.json").unwrap()).unwrap();
-                            player.play(sand).unwrap().detach();
+                            let sand = ton::PlayableSfxr::load_from_json(
+                                &std::fs::read_to_string("./dirt.json").unwrap(),
+                            )
+                            .unwrap();
+                            player.play(sand).detach();
                         }
                     }
                     chunk.set_block(block_coord, Block::Empty);
